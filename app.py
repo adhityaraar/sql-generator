@@ -16,8 +16,8 @@ from langchain.utilities import SQLDatabase
 load_dotenv()
 
 api_key = os.getenv("WX_API_KEY", None)
-ibm_cloud_url = os.getenv("WX_PROJECT_ID", None)
-project_id = os.getenv("WX_URL", None)
+ibm_cloud_url = os.getenv("WX_URL", None)
+project_id = os.getenv("WX_PROJECT_ID", None)
 
 if api_key is None or ibm_cloud_url is None or project_id is None:
     print("Ensure you copied the .env file that you created earlier into the same directory as this notebook")
@@ -38,7 +38,7 @@ header_text = 'DBS Rucika Indonesia <span style="color: blue; font-family: Cormo
 st.markdown(f'<h1 style="color: black;">{header_text}</h1>', unsafe_allow_html=True)
 
 with st.sidebar:
-    image = Image.open('watsonxai.jpg')
+    image = Image.open('images/watsonxai.jpg')
     st.image(image, caption='watsonx.ai, a next generation enterprise studio for AI builders to train, validate, tune and deploy AI models')
 
     st.write("Configure model and parameters:")
@@ -61,31 +61,13 @@ else:
 
 st.markdown('<hr style="border: 1px solid #f0f2f6;">', unsafe_allow_html=True)
 
-def translate_to_bahasa(sentence: str, choice: bool) -> str:
-    """
-    Translate the text between English and Bahasa based on the 'choice' flag.
-    
-    Args:
-        sentence (str): The text to translate.
-        choice (bool): If True, translates text to Bahasa. If False, translates to English.
-    Returns:
-        str: The translated text.
-    """
-    translator = Translator()
-    try:
-        if choice:
-            # Translate to Bahasa
-            translate = translator.translate(sentence, dest='id')
-        else:
-            # Translate to English
-            translate = translator.translate(sentence, dest='en')
-        return translate.text
-    except Exception as e:
-        # Handle translation-related issues (e.g., network error, unexpected API response)
-        raise ValueError(f"Translation failed: {str(e)}") from e
-
 ### Get the database
-db = SQLDatabase.from_uri("mysql+pymysql://root:<password>@<localhost>:<port>/<schema>")
+schema_db = os.getenv('SCHEMA_DB')
+localhost_db = os.getenv('LOCALHOST_DB')
+port_db = os.getenv('PORT_DB')
+password_db = os.getenv('PASSWORD_DB')
+
+db = SQLDatabase.from_uri(f"mysql+pymysql://root:{password_db}@{localhost_db}:{port_db}/{schema_db}")
 
 def get_schema(_):
     return db.get_table_info(["RTL","SJR"])
@@ -139,6 +121,9 @@ SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPrice FROM (SELECT itemQty, i
 Question: How many customer ordered in February 2023?
 SQL Query: SELECT COUNT(DISTINCT customer) AS NumberOfCustomers FROM (SELECT customer FROM rucika.RTL WHERE orderDate >= '2021-02-01' AND orderDate <= '2021-02-28' UNION SELECT customer FROM rucika.SJR WHERE orderDate >= '2021-02-01' AND orderDate <= '2021-02-28') AS combinedOrders;
 
+Question: How many items were ordered during the period 12-28 February 2021?
+SQL Query: SELECT SUM(itemQty) AS TotalItemsOrdered FROM (SELECT itemQty FROM rucika.RTL WHERE orderDate >= '2021-02-12' AND orderDate <= '2021-02-28' UNION SELECT itemQty FROM rucika.SJR WHERE orderDate >= '2021-02-12' AND orderDate <= '2021-02-28') AS combinedOrders;
+
 Question: {question}
 SQL Query:
 """
@@ -162,7 +147,7 @@ def list_query_parser(queries):
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "Halo, Silahkan tanya apa saja terkait penjualan order Anda!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello, please ask anything related to your order sales!"}]
 
 # Display or clear chat messages
 for message in st.session_state.messages:
@@ -175,15 +160,10 @@ if user_question := st.chat_input("Send a message...", key="prompt"):
     with st.chat_message("user"):
         st.write(user_question)
 
-    print(f"\n{user_question}\n")
-    translated_user_input = translate_to_bahasa(user_question, False)
-    print(f"{translated_user_input}\n")
-
-
 if st.session_state.messages[-1]["role"] != "assistant":
 
     with st.chat_message("assistant"):
-        with st.spinner("Harap Tunggu..."):
+        with st.spinner("HWait a moment..."):
 
             sql_response = (
                 RunnablePassthrough.assign(schema=get_schema)
@@ -204,22 +184,19 @@ if st.session_state.messages[-1]["role"] != "assistant":
                     | model_lang
                 )
 
-                translated_user_input = translate_to_bahasa(user_question, False)
-
-                sql_generator = sql_response.invoke({"question": translated_user_input})
+                sql_generator = sql_response.invoke({"question": user_question})
                 print(f"{sql_generator}\n")
 
-                response = full_chain.invoke({"question": translated_user_input})
+                response = full_chain.invoke({"question": user_question})
                 print(f"{response}\n")
 
                 if "<|endoftext|>" in response:
                     response = response.replace("<|endoftext|>", "")
 
-                response = translate_to_bahasa(response, True)
                 print(f"{response}\n")
 
             except:
-                response = "Maaf, saya tidak mengerti pertanyaan Anda. Silahkan tanya kembali dengan pertanyaan yang lebih spesifik."
+                response = "Apologies, I don't understand your question. Please ask again with a more specific question."
                 print("Error: Cannot generate SQL query")
 
         placeholder = st.empty()
@@ -231,3 +208,12 @@ if st.session_state.messages[-1]["role"] != "assistant":
         placeholder.markdown(full_response)
     message = {"role": "assistant", "content": full_response}
     st.session_state.messages.append(message)
+
+###translate in enlish
+# how much is the total purchase amount of item B and item C in the RTL channel?
+# how much is the total price of item A and item G?
+# How many customers ordered in February 2023?
+# How many items were ordered during the period 12-28 February 2021?
+# How much is the total price of item A in the RTL table?
+# Which customer ordered the highest quantity of item in the RTL table?
+# How much is the price of item D?
