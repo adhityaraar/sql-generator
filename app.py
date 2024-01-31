@@ -78,7 +78,7 @@ def run_query(query):
 ### Get the model
 parameters_starcode = {
     GenParams.DECODING_METHOD: DecodingMethods.GREEDY,
-    GenParams.MAX_NEW_TOKENS: 80,
+    GenParams.MAX_NEW_TOKENS: 512,
     GenParams.MIN_NEW_TOKENS: 1,
     GenParams.TEMPERATURE: 0.5,
     GenParams.TOP_K: 50,
@@ -118,11 +118,14 @@ SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM rucika.RT
 Question: What is total price of item A and item G?
 SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPrice FROM (SELECT itemQty, itemPrice FROM rucika.RTL WHERE itemProduct IN ('Item A', 'Item G') UNION ALL SELECT itemQty, itemPrice FROM rucika.SJR WHERE itemProduct IN ('Item A', 'Item G')) AS combinedTables;
 
-Question: How many customer ordered in February 2023?
-SQL Query: SELECT COUNT(DISTINCT customer) AS NumberOfCustomers FROM (SELECT customer FROM rucika.RTL WHERE orderDate >= '2021-02-01' AND orderDate <= '2021-02-28' UNION SELECT customer FROM rucika.SJR WHERE orderDate >= '2021-02-01' AND orderDate <= '2021-02-28') AS combinedOrders;
+Question: How many items were ordered during the period 12-28 February 2023?
+SQL Query: SELECT SUM(itemQty) AS TotalItemsOrdered FROM (SELECT itemQty FROM rucika.RTL WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28' UNION SELECT itemQty FROM rucika.SJR WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28') AS combinedOrders;
 
-Question: How many items were ordered during the period 12-28 February 2021?
-SQL Query: SELECT SUM(itemQty) AS TotalItemsOrdered FROM (SELECT itemQty FROM rucika.RTL WHERE orderDate >= '2021-02-12' AND orderDate <= '2021-02-28' UNION SELECT itemQty FROM rucika.SJR WHERE orderDate >= '2021-02-12' AND orderDate <= '2021-02-28') AS combinedOrders;
+Question: How many customer ordered in March 2023?
+SQL Query: SELECT customer, COUNT(*) AS OrderCount FROM (SELECT customer FROM rucika.RTL WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31' UNION ALL SELECT customer FROM rucika.SJR WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31') AS MarchOrders GROUP BY customer;
+
+Question: Which customer orders the highest total purchase between January and July 2023?
+SQL Query: SELECT customer, SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM (SELECT customer, itemQty, itemPrice FROM rucika.RTL WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31' UNION ALL SELECT customer, itemQty, itemPrice FROM rucika.SJR WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31') AS combinedOrders GROUP BY customer ORDER BY TotalPurchaseAmount DESC LIMIT 1;
 
 Question: {question}
 SQL Query:
@@ -147,7 +150,7 @@ def list_query_parser(queries):
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "Hello, please ask anything related to your order sales!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Welcome in the DBS Rucika viartual assistant! Please ask anything related to your order sales!"}]
 
 # Display or clear chat messages
 for message in st.session_state.messages:
@@ -163,7 +166,7 @@ if user_question := st.chat_input("Send a message...", key="prompt"):
 if st.session_state.messages[-1]["role"] != "assistant":
 
     with st.chat_message("assistant"):
-        with st.spinner("HWait a moment..."):
+        with st.spinner("Wait a moment..."):
 
             sql_response = (
                 RunnablePassthrough.assign(schema=get_schema)
@@ -213,7 +216,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
 # how much is the total purchase amount of item B and item C in the RTL channel?
 # how much is the total price of item A and item G?
 # How many customers ordered in February 2023?
-# How many items were ordered during the period 12-28 February 2021?
+# How many items were ordered during the period 12-28 February 2023?
 # How much is the total price of item A in the RTL table?
 # Which customer ordered the highest quantity of item in the RTL table?
 # How much is the price of item D?
