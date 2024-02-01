@@ -191,7 +191,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
                 print(f"{sql_generator}\n")
 
                 response = full_chain.invoke({"question": user_question})
-                print(f"{response}\n")
+                # print(f"{response}\n")
 
                 if "<|endoftext|>" in response:
                     response = response.replace("<|endoftext|>", "")
