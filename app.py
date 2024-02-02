@@ -28,13 +28,13 @@ else:
     }
 
 st.set_page_config(
-    page_title="DBS Rucika Indonesia",
+    page_title="Demo SQL to human language",
     page_icon="🧊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-header_text = 'DBS Rucika Indonesia <span style="color: blue; font-family: Cormorant Garamond; font-size: 40px;">| Watsonx</span>'
+header_text = 'Demo SQL to human language <span style="color: blue; font-family: Cormorant Garamond; font-size: 40px;">| Watsonx</span>'
 st.markdown(f'<h1 style="color: black;">{header_text}</h1>', unsafe_allow_html=True)
 
 with st.sidebar:
@@ -113,19 +113,19 @@ template_code = """Based on the table schema below, write a postgres query that 
 Schema: {schema}
 
 Question: What is the total purchase amount of item B and item C in the RTL channel?
-SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM rucika.RTL WHERE itemProduct IN ('Item B', ' Item C');
+SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM demosqlqna.RTL WHERE itemProduct IN ('Item B', ' Item C');
 
 Question: What is total price of item A and item G?
-SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPrice FROM (SELECT itemQty, itemPrice FROM rucika.RTL WHERE itemProduct IN ('Item A', 'Item G') UNION ALL SELECT itemQty, itemPrice FROM rucika.SJR WHERE itemProduct IN ('Item A', 'Item G')) AS combinedTables;
+SQL Query: SELECT SUM(itemQty * itemPrice) AS TotalPrice FROM (SELECT itemQty, itemPrice FROM demosqlqna.RTL WHERE itemProduct IN ('Item A', 'Item G') UNION ALL SELECT itemQty, itemPrice FROM demosqlqna.SJR WHERE itemProduct IN ('Item A', 'Item G')) AS combinedTables;
 
 Question: How many items were ordered during the period 12-28 February 2023?
-SQL Query: SELECT SUM(itemQty) AS TotalItemsOrdered FROM (SELECT itemQty FROM rucika.RTL WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28' UNION SELECT itemQty FROM rucika.SJR WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28') AS combinedOrders;
+SQL Query: SELECT SUM(itemQty) AS TotalItemsOrdered FROM (SELECT itemQty FROM demosqlqna.RTL WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28' UNION SELECT itemQty FROM demosqlqna.SJR WHERE orderDate >= '2023-02-12' AND orderDate <= '2023-02-28') AS combinedOrders;
 
 Question: How many customer ordered in March 2023?
-SQL Query: SELECT customer, COUNT(*) AS OrderCount FROM (SELECT customer FROM rucika.RTL WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31' UNION ALL SELECT customer FROM rucika.SJR WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31') AS MarchOrders GROUP BY customer;
+SQL Query: SELECT customer, COUNT(*) AS OrderCount FROM (SELECT customer FROM demosqlqna.RTL WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31' UNION ALL SELECT customer FROM demosqlqna.SJR WHERE orderDate >= '2023-03-01' AND orderDate <= '2023-03-31') AS MarchOrders GROUP BY customer;
 
 Question: Which customer orders the highest total purchase between January and July 2023?
-SQL Query: SELECT customer, SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM (SELECT customer, itemQty, itemPrice FROM rucika.RTL WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31' UNION ALL SELECT customer, itemQty, itemPrice FROM rucika.SJR WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31') AS combinedOrders GROUP BY customer ORDER BY TotalPurchaseAmount DESC LIMIT 1;
+SQL Query: SELECT customer, SUM(itemQty * itemPrice) AS TotalPurchaseAmount FROM (SELECT customer, itemQty, itemPrice FROM demosqlqna.RTL WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31' UNION ALL SELECT customer, itemQty, itemPrice FROM demosqlqna.SJR WHERE orderDate >= '2023-01-01' AND orderDate <= '2023-07-31') AS combinedOrders GROUP BY customer ORDER BY TotalPurchaseAmount DESC LIMIT 1;
 
 Question: {question}
 SQL Query:
@@ -150,7 +150,7 @@ def list_query_parser(queries):
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "Welcome in the DBS Rucika viartual assistant! Please ask anything related to your order sales!"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Welcome in the virtual assistant! Please ask anything related to your order sales!"}]
 
 # Display or clear chat messages
 for message in st.session_state.messages:
@@ -211,12 +211,3 @@ if st.session_state.messages[-1]["role"] != "assistant":
         placeholder.markdown(full_response)
     message = {"role": "assistant", "content": full_response}
     st.session_state.messages.append(message)
-
-###translate in enlish
-# how much is the total purchase amount of item B and item C in the RTL channel?
-# how much is the total price of item A and item G?
-# How many customers ordered in February 2023?
-# How many items were ordered during the period 12-28 February 2023?
-# How much is the total price of item A in the RTL table?
-# Which customer ordered the highest quantity of item in the RTL table?
-# How much is the price of item D?
