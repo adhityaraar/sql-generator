@@ -1,4 +1,4 @@
-# Demo purposes:
+# Demo purposes
 Using WatsonX.ai to integrate with multiple tables by converting SQL commands to human language
 
 ![top](./images/architecture.png)
