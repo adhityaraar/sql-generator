@@ -6,7 +6,7 @@ Using WatsonX.ai to integrate with multiple tables by converting SQL commands to
 ![top](./images/tableqna.png)
 
 # Example Question-Answer
-Example of the question for 1 table
+Example of the question for 1 table:
 - How much is the price of Pipe D?
 - How much is the total purchase amount of Pipe B and Pipe C in the RTL channel?
 
