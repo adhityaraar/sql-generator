@@ -1,5 +1,5 @@
 # Demo purposes:
-Deal with multiple tables with watsonx.ai by converting SQL to human language
+Using WatsonX.ai to integrate with multiple tables by converting SQL commands to human language
 
 ![top](./images/architecture.png)
 
